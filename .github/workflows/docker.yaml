@@ -57,10 +57,3 @@ jobs:
           platforms: linux/arm/v7,linux/arm64/v8,linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
