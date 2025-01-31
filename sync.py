@@ -13,6 +13,8 @@ import jsonschema
 import requests
 import schedule
 
+from semver.version import Version
+
 
 class Immich:
     def __init__(self, immich_url: str, api_key: str) -> None:
@@ -21,6 +23,9 @@ class Immich:
 
     def whoami(self):
         return self._get("/api/users/me")
+
+    def version(self):
+        return self._get("/api/server/version")
 
     def get_people(self):
         return self._get("/api/people?size=1000&withHidden=false")
@@ -104,7 +109,7 @@ class Immich:
     def _delete(self, path, payload):
         return self._api("DELETE", path, json.dumps(payload))
 
-    def _api(self, verb, path, payload):
+    def _api(self, verb: str, path: str, payload: Any):
         url = f"{self.immich_url}/{path.lstrip('/')}"
         headers = {
             "Content-Type": "application/json",
@@ -223,6 +228,13 @@ def sync_albums(args):
 
     # create the api
     immich = Immich(args.immich_url, args.immich_api_key)
+
+    # print version
+    immich_version = Version(**immich.version())
+    print(f"Immich version: {immich_version}")
+
+    min_supported_version = Version(1, 113, 0)
+    assert immich_version >= min_supported_version, f"Minimum supported version is {min_supported_version}"
 
     # prefetch all people to allow matching by name
     people = immich.get_people()
