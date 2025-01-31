@@ -81,7 +81,7 @@ Beware that if you specify the name of an existing album, it will be overwritten
 ```yaml
 services:
 
-    immich:
+    immich-server:
         container_name: immich_server
         ...
 
@@ -89,16 +89,18 @@ services:
         image: ghcr.io/kvalev/immich-dynamic-albums:${IMMICH_DYNAMIC_ALBUMS_VERSION:-latest}
         restart: unless-stopped
         volumes:
-            - ./config/dynamic-albums.json:/config/dynamic-albums.json:ro
+            - PATH_TO_CONFIG_JSON_FILE:/config/dynamic-albums.json:ro
         environment:
             IMMICH_URL: http://immich_server:2283/
             IMMICH_API_KEY: API_KEY
             CONFIG_FILE: /config/dynamic-albums.json
             SCHEDULE_INTERVAL: 1440 # 1440 minutes, meaning once per day
+            PYTHONUNBUFFERED: True # ensure stdout is flushed on every print
         env_file:
             - .env
         depends_on:
-            - immich
+            immich-server:
+                condition: service_healthy
 ```
 
 ### Docker
