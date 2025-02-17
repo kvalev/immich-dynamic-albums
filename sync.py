@@ -30,6 +30,9 @@ class Immich:
     def get_people(self):
         return self._get("/api/people?size=1000&withHidden=false")
 
+    def get_tags(self):
+        return self._get("/api/tags")
+
     def get_albums(self):
         return self._get("/api/albums?shared=false")
 
@@ -71,10 +74,8 @@ class Immich:
         after: datetime = None,
         favorite: bool = None,
         person_ids: List[str] = None,
-        tags: List[str] = None,
+        tag_ids: List[str] = None,
     ):
-        assert not tags, "Searching by tags is not yet supported by immich"
-
         search_params = {
             "isVisible": True,
             "withExif": True,
@@ -94,6 +95,8 @@ class Immich:
             search_params["isFavorite"] = favorite
         if person_ids:
             search_params["personIds"] = person_ids
+        if tag_ids:
+            search_params["tagIds"] = tag_ids
 
         return self._post("/api/search/metadata", search_params)
 
@@ -144,7 +147,7 @@ def read_json(config_path: Union[Path, str]) -> Any:
         return json.load(f)
 
 
-def config_query_to_search_queries(query: Dict, people_mapping: Dict[str, str]) -> List[Dict]:
+def config_query_to_search_queries(query: Dict, people_mapping: Dict[str, str], tag_mapping: Dict[str, str]) -> List[Dict]:
     if "people" in query:
         people = query["people"]
         if not isinstance(people, list):
@@ -164,6 +167,26 @@ def config_query_to_search_queries(query: Dict, people_mapping: Dict[str, str]) 
 
         query["person_ids"] = person_ids
         query.pop("people", None)
+
+    if "tags" in query:
+        tags = query["tags"]
+        if not isinstance(tags, list):
+            tags = [tags]
+
+        tag_ids = [
+            tag
+            if is_valid_uuid(tag) else tag_mapping.get(tag, None)
+            for tag in tags
+        ]
+
+        if None in tag_ids:
+            invalid_tags = [
+                tags[idx] for idx, value_or_id in enumerate(tag_ids) if not value_or_id
+            ]
+            raise ValueError(f"The following tags do not exist in Immich: {invalid_tags}")
+
+        query["tag_ids"] = tag_ids
+        query.pop("tags", None)
 
     # use 'None' as default to simplify the product operation below
     query_countries = query.pop("country", [None])
@@ -240,6 +263,10 @@ def sync_albums(args):
     people = immich.get_people()
     people_name_to_id = dict((p["name"], p["id"]) for p in people["people"])
 
+    # prefetch all tags to allow matching by name
+    tags = immich.get_tags()
+    tag_value_to_id = dict((t["value"], t["id"]) for t in tags)
+
     for config in configs:
         album_name = config["name"]
         print(f"Processing album {album_name}")
@@ -247,7 +274,7 @@ def sync_albums(args):
         # split the query into multiple subqueries depending on whether there are multiple
         # countries or timespans
         search_queries = list(
-            config_query_to_search_queries(config["query"], people_mapping=people_name_to_id)
+            config_query_to_search_queries(config["query"], people_mapping=people_name_to_id, tag_mapping=tag_value_to_id)
         )
         print(f"Album search queries: {search_queries}")
 

@@ -55,6 +55,12 @@
               {"$ref": "#/$defs/Timespan"},
               {"type": "array", "items": {"$ref": "#/$defs/Timespan"}, "uniqueItems": true}
             ]
+          },
+          "tags": {
+            "anyOf": [
+              {"type": "string"},
+              {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+            ]
           }
         }
       },
