@@ -270,7 +270,7 @@ def sync_albums(args):
         album_extra_assets_ids = list(set(album_assets_ids) - set(search_assets_ids))
 
         print(f"Missing assets: {len(album_missing_assets_ids)}")
-        print(f"Extra assets: {len(album_missing_assets_ids)}")
+        print(f"Extra assets: {len(album_extra_assets_ids)}")
 
         if album_extra_assets_ids:
             immich.delete_assets_from_album(album["id"], album_extra_assets_ids)
