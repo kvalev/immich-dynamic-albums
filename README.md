@@ -35,6 +35,13 @@ Besides few standard configuration options (such as Immich URL and API key), the
         }
     },
     {
+        # Search tags by mixing names and uuids
+        "name": "My awesome vacation",
+        "query": {
+            "tags": ["vacation1", "545cf3a7-9f67-4028-9ed2-54bff6508052"]
+        }
+    },
+    {
         # Search by country, favorite flag and a timespan
         "name": "Best of Egypt 2021",
         "query": {
