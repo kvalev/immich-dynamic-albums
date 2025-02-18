@@ -256,7 +256,7 @@ def sync_albums(args):
     immich_version = Version(**immich.version())
     print(f"Immich version: {immich_version}")
 
-    min_supported_version = Version(1, 113, 0)
+    min_supported_version = Version(1, 126, 0)
     assert immich_version >= min_supported_version, f"Minimum supported version is {min_supported_version}"
 
     # prefetch all people to allow matching by name
