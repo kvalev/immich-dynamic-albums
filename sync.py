@@ -34,7 +34,7 @@ class Immich:
         return self._get("/api/tags")
 
     def get_albums(self):
-        return self._get("/api/albums?shared=false")
+        return self._get("/api/albums")
 
     def get_album(self, album_id: str, with_assets: bool = False):
         return self._get(f"/api/albums/{album_id}?withoutAssets={json.dumps(not with_assets)}")
