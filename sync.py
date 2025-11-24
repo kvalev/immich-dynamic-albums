@@ -65,6 +65,21 @@ class Immich:
 
         return self._put(f"/api/albums/{album_id}/assets", add_params)
 
+    def search_assets(self, **search_params) -> Iterable:
+        page = None
+        while True:
+            search_result = self.search(page=page, **search_params)
+            assets_result = search_result["assets"]
+
+            for item in assets_result["items"]:
+                yield item
+
+            next_page = assets_result["nextPage"]
+            if not next_page:
+                break
+
+            page = int(next_page)
+
     def search(
         self,
         country: str = None,
@@ -76,6 +91,7 @@ class Immich:
         favorite: bool = None,
         person_ids: List[str] = None,
         tag_ids: List[str] = None,
+        page: int = None
     ):
         search_params = {
             "isVisible": True,
@@ -100,6 +116,8 @@ class Immich:
             search_params["personIds"] = person_ids
         if tag_ids:
             search_params["tagIds"] = tag_ids
+        if page:
+            search_params["page"] = page
 
         return self._post("/api/search/metadata", search_params)
 
@@ -281,8 +299,7 @@ def sync_albums(args):
         )
         print(f"Album search queries: {search_queries}")
 
-        search_results = [immich.search(**query) for query in search_queries]
-        search_results = list(map(lambda x: x["assets"]["items"], search_results))
+        search_results = [list(immich.search_assets(**query)) for query in search_queries]
         search_results = list(itertools.chain(*search_results))
 
         # aggregate the asset ids from all search queries
