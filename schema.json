@@ -27,6 +27,7 @@
       },
       "Query": {
         "type": "object",
+        "minProperties": 1,
         "additionalProperties": false,
         "properties": {
           "country": {
@@ -39,6 +40,9 @@
             "type": "string"
           },
           "city": {
+            "type": "string"
+          },
+          "path": {
             "type": "string"
           },
           "favorite": {

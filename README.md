@@ -74,6 +74,13 @@ Besides few standard configuration options (such as Immich URL and API key), the
                 {"start": "2025-01-15", "end": "2025-01-20"}
             ]
         }
+    },
+    {
+        # Search by path substring
+        "name": "All visited football games",
+        "query": {
+            "path": "Football"
+        }
     }
 ]
 ```

@@ -70,6 +70,7 @@ class Immich:
         country: str = None,
         state: str = None,
         city: str = None,
+        path: str = None,
         before: datetime = None,
         after: datetime = None,
         favorite: bool = None,
@@ -87,6 +88,8 @@ class Immich:
             search_params["state"] = state
         if city:
             search_params["city"] = city
+        if path:
+            search_params["originalPath"] = path
         if before:
             search_params["takenBefore"] = before.isoformat() # 2025-01-31T23:59:59.999Z
         if after:
@@ -256,7 +259,7 @@ def sync_albums(args):
     immich_version = Version(**immich.version())
     print(f"Immich version: {immich_version}")
 
-    min_supported_version = Version(1, 126, 0)
+    min_supported_version = Version(1, 127, 0)
     assert immich_version >= min_supported_version, f"Minimum supported version is {min_supported_version}"
 
     # prefetch all people to allow matching by name
