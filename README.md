@@ -29,9 +29,12 @@ Besides few standard configuration options (such as Immich URL and API key), the
     },
     {
         # Search people by mixing names and uuids
+        # Using 'people_strict_mode' will pick the assets where only the two people are tagged.
+        # Assets that include any additional tagged faces will be excluded.
         "name": "Me & Wife",
         "query": {
-            "people": ["Me", "35cb0ab8-24d2-4c76-bf8f-86101c867dc8"]
+            "people": ["Me", "35cb0ab8-24d2-4c76-bf8f-86101c867dc8"],
+            "people_strict_mode": true
         }
     },
     {
