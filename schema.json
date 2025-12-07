@@ -54,6 +54,9 @@
               {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
             ]
           },
+          "people_strict_mode": {
+            "type": "boolean"
+          },
           "timespan": {
             "anyOf": [
               {"$ref": "#/$defs/Timespan"},

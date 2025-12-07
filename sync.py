@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, ArgumentTypeError
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Iterable, List, Union
 
 import itertools
 import json
@@ -168,47 +168,55 @@ def read_json(config_path: Union[Path, str]) -> Any:
         return json.load(f)
 
 
-def config_query_to_search_queries(query: Dict, people_mapping: Dict[str, str], tag_mapping: Dict[str, str]) -> List[Dict]:
-    if "people" in query:
-        people = query["people"]
-        if not isinstance(people, list):
-            people = [people]
+def normalize_query_people(query: Dict, people_mapping: Dict[str, str]):
+    if "people" not in query:
+        return
 
-        person_ids = [
-            person
-            if is_valid_uuid(person) else people_mapping.get(person, None)
-            for person in people
+    people = query["people"]
+    if not isinstance(people, list):
+        people = [people]
+
+    person_ids = [
+        person
+        if is_valid_uuid(person) else people_mapping.get(person, None)
+        for person in people
+    ]
+
+    if None in person_ids:
+        invalid_people_names = [
+            people[idx] for idx, name_or_id in enumerate(person_ids) if not name_or_id
         ]
+        raise ValueError(f"The following names do not exist in Immich: {invalid_people_names}")
 
-        if None in person_ids:
-            invalid_people_names = [
-                people[idx] for idx, name_or_id in enumerate(person_ids) if not name_or_id
-            ]
-            raise ValueError(f"The following names do not exist in Immich: {invalid_people_names}")
+    query["person_ids"] = person_ids
+    query.pop("people", None)
 
-        query["person_ids"] = person_ids
-        query.pop("people", None)
 
-    if "tags" in query:
-        tags = query["tags"]
-        if not isinstance(tags, list):
-            tags = [tags]
+def normalize_query_tags(query: Dict, tag_mapping: Dict[str, str]):
+    if "tags" not in query:
+        return
 
-        tag_ids = [
-            tag
-            if is_valid_uuid(tag) else tag_mapping.get(tag, None)
-            for tag in tags
+    tags = query["tags"]
+    if not isinstance(tags, list):
+        tags = [tags]
+
+    tag_ids = [
+        tag
+        if is_valid_uuid(tag) else tag_mapping.get(tag, None)
+        for tag in tags
+    ]
+
+    if None in tag_ids:
+        invalid_tags = [
+            tags[idx] for idx, value_or_id in enumerate(tag_ids) if not value_or_id
         ]
+        raise ValueError(f"The following tags do not exist in Immich: {invalid_tags}")
 
-        if None in tag_ids:
-            invalid_tags = [
-                tags[idx] for idx, value_or_id in enumerate(tag_ids) if not value_or_id
-            ]
-            raise ValueError(f"The following tags do not exist in Immich: {invalid_tags}")
+    query["tag_ids"] = tag_ids
+    query.pop("tags", None)
 
-        query["tag_ids"] = tag_ids
-        query.pop("tags", None)
 
+def config_query_to_search_queries(query: Dict) -> Iterable[Dict]:
     # use 'None' as default to simplify the product operation below
     query_countries = query.pop("country", [None])
     if isinstance(query_countries, str):
@@ -292,15 +300,23 @@ def sync_albums(args):
         album_name = config["name"]
         print(f"Processing album {album_name}")
 
+        query = config["query"]
+        normalize_query_people(query, people_name_to_id)
+        normalize_query_tags(query, tag_value_to_id)
+
+        people_strict_mode = query.pop("people_strict_mode", False)
+        person_ids = query.get("person_ids", None)
+
         # split the query into multiple subqueries depending on whether there are multiple
         # countries or timespans
-        search_queries = list(
-            config_query_to_search_queries(config["query"], people_mapping=people_name_to_id, tag_mapping=tag_value_to_id)
-        )
+        search_queries = list(config_query_to_search_queries(config["query"]))
         print(f"Album search queries: {search_queries}")
 
         search_results = [list(immich.search_assets(**query)) for query in search_queries]
         search_results = list(itertools.chain(*search_results))
+
+        if people_strict_mode and person_ids:
+            search_results = [result for result in search_results if len(result["people"]) == len(person_ids)]
 
         # aggregate the asset ids from all search queries
         search_assets_ids = [asset["id"] for asset in search_results]
