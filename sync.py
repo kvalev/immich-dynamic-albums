@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, ArgumentTypeError
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Union
+from typing import Any, Dict, Iterable, List, Union, Literal, Tuple
 
 import itertools
 import json
@@ -91,7 +91,8 @@ class Immich:
         favorite: bool = None,
         person_ids: List[str] = None,
         tag_ids: List[str] = None,
-        page: int = None
+        page: int = None,
+        media_type: str = None
     ):
         search_params = {
             "isVisible": True,
@@ -118,6 +119,8 @@ class Immich:
             search_params["tagIds"] = tag_ids
         if page:
             search_params["page"] = page
+        if media_type:
+            search_params["type"] = media_type
 
         return self._post("/api/search/metadata", search_params)
 
@@ -217,12 +220,17 @@ def normalize_query_tags(query: Dict, tag_mapping: Dict[str, str]):
 
 
 def config_query_to_search_queries(query: Dict) -> Iterable[Dict]:
-    # use 'None' as default to simplify the product operation below
-    query_countries = query.pop("country", [None])
-    if isinstance(query_countries, str):
-        query_countries = [query_countries]
-    elif not isinstance(query_countries, list):
-        raise ValueError("'country' has to be either a string or a list of strings")
+    def extract_location(location_type: Literal["country", "city", "state"]) -> List[Tuple]:
+        query_location = query.pop(location_type, [])
+        if isinstance(query_location, str):
+            query_location = [query_location]
+        elif not isinstance(query_location, list):
+            raise ValueError(f"'{location_type}' has to be either a string or a list of strings")
+        return [(location_type, location) for location in query_location]
+
+    query_all_locations = extract_location("country") + extract_location("state") + extract_location("city")
+    if not query_all_locations:
+        query_all_locations = [("country", None)]
 
     query_timespans = query.pop("timespan", [])
     if isinstance(query_timespans, dict):
@@ -242,11 +250,11 @@ def config_query_to_search_queries(query: Dict) -> Iterable[Dict]:
         query_timespans.append({"before": None, "after": None})
 
     # for r in itertools.product(a, b): print r[0] + r[1]
-    for p in itertools.product(query_countries, query_timespans):
+    for loc, ts in itertools.product(query_all_locations, query_timespans):
         subquery = {
-            "country": p[0],
+            loc[0]: loc[1],
             # unpack 'before' and 'after'
-            **p[1],
+            **ts,
             # unpack all other options, e.g. 'favorite'
             **query,
         }
