@@ -219,16 +219,17 @@ def normalize_query_tags(query: Dict, tag_mapping: Dict[str, str]):
     query.pop("tags", None)
 
 
-def config_query_to_search_queries(query: Dict) -> Iterable[Dict]:
-    def extract_location(location_type: Literal["country", "city", "state"]) -> List[Tuple]:
-        query_location = query.pop(location_type, [])
-        if isinstance(query_location, str):
-            query_location = [query_location]
-        elif not isinstance(query_location, list):
-            raise ValueError(f"'{location_type}' has to be either a string or a list of strings")
-        return [(location_type, location) for location in query_location]
+def extract_location(query: Dict, location_type: Literal["country", "city", "state"]) -> List[Tuple]:
+    query_location = query.pop(location_type, [])
+    if isinstance(query_location, str):
+        query_location = [query_location]
+    elif not isinstance(query_location, list):
+        raise ValueError(f"'{location_type}' has to be either a string or a list of strings")
+    return [(location_type, location) for location in query_location]
 
-    query_all_locations = extract_location("country") + extract_location("state") + extract_location("city")
+
+def config_query_to_search_queries(query: Dict) -> Iterable[Dict]:
+    query_all_locations = extract_location(query, "country") + extract_location(query, "state") + extract_location(query, "city")
     if not query_all_locations:
         query_all_locations = [("country", None)]
 
