@@ -3,91 +3,151 @@
     "title": "Albums",
     "type": "array",
     "items": {
-      "$ref": "#/$defs/Album"
+        "$ref": "#/$defs/Album"
     },
     "minItems": 1,
     "uniqueItems": true,
     "$defs": {
-      "Album": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "description": "Name of the album",
-            "type": "string"
-          },
-          "query": {
-            "$ref": "#/$defs/Query"
-          }
+        "Album": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "description": "Name of the album",
+                    "type": "string"
+                },
+                "query": {
+                    "$ref": "#/$defs/Query"
+                }
+            },
+            "required": [
+                "name",
+                "query"
+            ]
         },
-        "required": [
-          "name",
-          "query"
-        ]
-      },
-      "Query": {
-        "type": "object",
-        "minProperties": 1,
-        "additionalProperties": false,
-        "properties": {
-          "country": {
-            "anyOf": [
-              {"type": "string"},
-              {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        "Query": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+                "country": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "uniqueItems": true
+                        }
+                    ]
+                },
+                "state": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "uniqueItems": true
+                        }
+                    ]
+                },
+                "city": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "uniqueItems": true
+                        }
+                    ]
+                },
+                "path": {
+                    "type": "string"
+                },
+                "favorite": {
+                    "type": "boolean"
+                },
+                "people": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "uniqueItems": true
+                        }
+                    ]
+                },
+                "people_strict_mode": {
+                    "type": "boolean"
+                },
+                "timespan": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/Timespan"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/Timespan"
+                            },
+                            "uniqueItems": true
+                        }
+                    ]
+                },
+                "tags": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "uniqueItems": true
+                        }
+                    ]
+                },
+                "media_type": {
+                    "enum": [
+                        "IMAGE",
+                        "VIDEO"
+                    ]
+                }
+            }
+        },
+        "Timespan": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "start": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                },
+                "end": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                }
+            },
+            "required": [
+                "start",
+                "end"
             ]
-          },
-          "state": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          },
-          "favorite": {
-            "type": "boolean"
-          },
-          "people": {
-            "anyOf": [
-              {"type": "string"},
-              {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
-            ]
-          },
-          "people_strict_mode": {
-            "type": "boolean"
-          },
-          "timespan": {
-            "anyOf": [
-              {"$ref": "#/$defs/Timespan"},
-              {"type": "array", "items": {"$ref": "#/$defs/Timespan"}, "uniqueItems": true}
-            ]
-          },
-          "tags": {
-            "anyOf": [
-              {"type": "string"},
-              {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
-            ]
-          }
         }
-      },
-      "Timespan": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "start": {
-            "type": "string",
-            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-          },
-          "end": {
-            "type": "string",
-            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-          }
-        },
-        "required": [
-          "start",
-          "end"
-        ]
-      }
     }
-  }
+}
