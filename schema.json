@@ -68,6 +68,15 @@
               {"type": "string"},
               {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
             ]
+          },
+          "any_people": {
+            "description": "Assets must contain at least one of these people. Cannot be used with 'people' (which implies AND logic for all its members) in the same query block.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "minItems": 1
           }
         }
       },

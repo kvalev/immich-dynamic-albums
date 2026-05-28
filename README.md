@@ -84,6 +84,13 @@ Besides few standard configuration options (such as Immich URL and API key), the
         "query": {
             "path": "Football"
         }
+    },
+    {
+        # Search for assets containing ANY of the specified people (OR logic)
+        "name": "Me or Wife",
+        "query": {
+            "any_people": ["Me", "Wife"]
+        }
     }
 ]
 ```
