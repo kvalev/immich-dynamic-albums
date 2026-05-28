@@ -399,6 +399,12 @@ def parse_args():
         default=os.environ.get("SCHEDULE_INTERVAL", 0),
         help="Schedule interval in minutes",
     )
+    parser.add_argument(
+        "--start-delay",
+        type=int,
+        default=os.environ.get("START_DELAY", 0),
+        help="Delay the initial albums update (in seconds)",
+    )
 
     return parser.parse_args()
 
@@ -409,7 +415,10 @@ def main():
     assert args.immich_api_key, "immich-api-key is required"
     assert args.config_file, "config-file is required"
 
-    # run immediately ...
+    # delay the initial start (e.g. to give time for the immich container to start) ...
+    time.sleep(int(args.start_delay))
+
+    # ... then run the sync process ...
     sync_albums(args)
 
     # ... and then schedule a job to continuously run (optionally)

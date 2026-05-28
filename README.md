@@ -119,6 +119,7 @@ services:
             IMMICH_API_KEY: API_KEY
             CONFIG_FILE: /config/dynamic-albums.json
             SCHEDULE_INTERVAL: 1440 # 1440 minutes, meaning once per day
+            START_DELAY: 120 # 2 minutes which gives the immich instance some time to startup
             PYTHONUNBUFFERED: True # ensure stdout is flushed on every print
         env_file:
             - .env
