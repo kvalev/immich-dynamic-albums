@@ -96,6 +96,7 @@ class Immich:
         search_params = {
             "isVisible": True,
             "withExif": True,
+            "withPeople": True,
         }
 
         if country:
