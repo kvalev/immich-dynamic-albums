@@ -1,5 +1,5 @@
 from argparse import ArgumentParser, ArgumentTypeError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Union
 
@@ -36,8 +36,8 @@ class Immich:
     def get_albums(self):
         return self._get("/api/albums")
 
-    def get_album(self, album_id: str, with_assets: bool = False):
-        return self._get(f"/api/albums/{album_id}?withoutAssets={json.dumps(not with_assets)}")
+    def get_album_assets_ids(self, album_id: str) -> List[str]:
+        return [asset["id"] for asset in self.search_assets(album_ids=[album_id])]
 
     def create_album(self, name: str, description: str = None):
         # me = self.whoami()
@@ -91,6 +91,7 @@ class Immich:
         favorite: bool = None,
         person_ids: List[str] = None,
         tag_ids: List[str] = None,
+        album_ids: List[str] = None,
         page: int = None
     ):
         search_params = {
@@ -108,15 +109,17 @@ class Immich:
         if path:
             search_params["originalPath"] = path
         if before:
-            search_params["takenBefore"] = before.isoformat() # 2025-01-31T23:59:59.999Z
+            search_params["takenBefore"] = before.replace(tzinfo=timezone.utc).isoformat()
         if after:
-            search_params["takenAfter"] = after.isoformat() # 2025-01-31T23:59:59.999Z
+            search_params["takenAfter"] = after.replace(tzinfo=timezone.utc).isoformat()
         if favorite is not None:
             search_params["isFavorite"] = favorite
         if person_ids:
             search_params["personIds"] = person_ids
         if tag_ids:
             search_params["tagIds"] = tag_ids
+        if album_ids:
+            search_params["albumIds"] = album_ids
         if page:
             search_params["page"] = page
 
@@ -358,9 +361,8 @@ def sync_albums(args):
         # create the target album or find it amongst the other albums
         album_without_assets = create_album_if_not_exists(immich, album_name)
 
-        # (again) retrieve the album, including it's assets
-        album = immich.get_album(album_without_assets["id"], with_assets=True)
-        album_assets_ids = [asset["id"] for asset in album["assets"]]
+        album_id = album_without_assets["id"]
+        album_assets_ids = immich.get_album_assets_ids(album_id)
 
         # calculate assets missing from the album and assets which should be removed from it
         album_missing_assets_ids = list(set(search_assets_ids) - set(album_assets_ids))
@@ -370,10 +372,10 @@ def sync_albums(args):
         print(f"Extra assets: {len(album_extra_assets_ids)}")
 
         if album_extra_assets_ids:
-            immich.delete_assets_from_album(album["id"], album_extra_assets_ids)
+            immich.delete_assets_from_album(album_id, album_extra_assets_ids)
 
         if album_missing_assets_ids:
-            immich.add_assets_to_album(album["id"], album_missing_assets_ids)
+            immich.add_assets_to_album(album_id, album_missing_assets_ids)
 
         print("Done")
 
