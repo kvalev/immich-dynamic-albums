@@ -57,6 +57,16 @@ Besides few standard configuration options (such as Immich URL and API key), the
         }
     },
     {
+        # Relative dates: a rolling window, re-evaluated on every sync
+        "name": "Last 6 months",
+        "query": {
+            "timespan": {
+                "start": "6m ago",
+                "end": "today"
+            }
+        }
+    },
+    {
         # Search by multiple countries (names should match the ones in Immich)
         "name": "Best of Southeast Asia 2022",
         "query": {
@@ -94,6 +104,13 @@ Besides few standard configuration options (such as Immich URL and API key), the
     }
 ]
 ```
+
+`timespan.start` / `timespan.end` accept either an absolute `YYYY-MM-DD` date or a relative
+expression: `today`, `yesterday`, `Nd ago`, `Nw ago`, `Nm ago` (months) or `Ny ago` (years).
+Relative dates are resolved at each sync against the current UTC date, so a window such as
+`"start": "6m ago", "end": "today"` rolls forward on every run without editing the config.
+Month arithmetic clamps to the last day of the target month (`2026-03-31` minus `1m` is
+`2026-02-28`).
 
 Beware that if you specify the name of an existing album, it will be overwritten. If you remove some of the albums from the config, they will not be deleted in immich - you will have to do it manually.
 
