@@ -1,11 +1,13 @@
 from argparse import ArgumentParser, ArgumentTypeError
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Union
 
+import calendar
 import itertools
 import json
 import os
+import re
 import time
 import uuid
 
@@ -247,6 +249,44 @@ def normalize_query_any_people(query: Dict, people_mapping: Dict[str, str]):
     query.pop("any_people", None)
 
 
+_RELATIVE_DATE = re.compile(r"(\d+)\s*([dwmy])\s*ago")
+
+
+def _subtract_months(d: date, months: int) -> date:
+    total = d.year * 12 + (d.month - 1) - months
+    year, month = divmod(total, 12)
+    month += 1
+    day = min(d.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def resolve_date(expr: str, today=None) -> date:
+    """Resolve a timespan bound.
+
+    Accepts an absolute ``YYYY-MM-DD`` date, or a relative expression:
+    ``today``, ``yesterday``, ``<N>d ago``, ``<N>w ago``, ``<N>m ago`` (months)
+    and ``<N>y ago`` (years). Relative expressions are evaluated against
+    ``today`` (UTC) at run time, so a rolling window advances on every sync.
+    """
+    today = today or datetime.now(timezone.utc).date()
+    text = expr.strip().lower()
+    if text == "today":
+        return today
+    if text == "yesterday":
+        return today - timedelta(days=1)
+    match = _RELATIVE_DATE.fullmatch(text)
+    if match:
+        amount, unit = int(match.group(1)), match.group(2)
+        if unit == "d":
+            return today - timedelta(days=amount)
+        if unit == "w":
+            return today - timedelta(weeks=amount)
+        if unit == "m":
+            return _subtract_months(today, amount)
+        return _subtract_months(today, 12 * amount)
+    return datetime.strptime(text, "%Y-%m-%d").date()
+
+
 def config_query_to_search_queries(query: Dict) -> Iterable[Dict]:
     # use 'None' as default to simplify the product operation below
     query_countries = query.pop("country", [None])
@@ -263,8 +303,8 @@ def config_query_to_search_queries(query: Dict) -> Iterable[Dict]:
 
     query_timespans = [
         {
-            "before": datetime.strptime(q["end"], "%Y-%m-%d") + timedelta(hours=24),
-            "after": datetime.strptime(q["start"], "%Y-%m-%d")
+            "before": datetime.combine(resolve_date(q["end"]), datetime.min.time()) + timedelta(hours=24),
+            "after": datetime.combine(resolve_date(q["start"]), datetime.min.time()),
         }
         for q in query_timespans
     ]
