@@ -25,7 +25,11 @@ class Immich:
         return self._get("/api/users/me")
 
     def version(self):
-        return self._get("/api/server/version")
+        # Immich 3.x adds extra keys to this response (e.g. featureLevel) that
+        # python-semver's Version(**...) does not accept. Keep only the fields
+        # semver understands so unknown keys are ignored now and in future.
+        v = self._get("/api/server/version")
+        return {k: v[k] for k in ("major", "minor", "patch", "prerelease", "build") if k in v}
 
     def get_people(self):
         return self._get("/api/people?size=1000&withHidden=false")
